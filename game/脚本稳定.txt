@@ -1,0 +1,414 @@
+
+Dim left, top, right, bottom, width, height, centerX, centerY
+Dim DUR
+Dim startX, startY, seedX, seedY, knifeX, knifeY
+Dim shelX, shelY, shelInX, shelInY, shelGap
+Dim timeCost
+Dim tinXCnt, tinYCnt
+Dim locX, locY, dx, dy
+Dim runFlag
+Dim ratio
+
+Call startTask()
+
+Function startTask()
+	Call init()
+	Call moveToInitPos()
+	// 开始种植之前判断一下有没有x号，有就关闭
+	FindPic left, top, right, bottom, "Attachment:\close.bmp", ratio, x, y
+	If (x > 0) Then 
+		MoveTo x, y
+		LeftClick 1
+		Delay 50
+		Exit Function
+	Else 
+		Call plant()
+		s = Plugin.GetSysInfo.GetTime()
+		Call completeSell()
+		c = Plugin.GetSysInfo.GetTime() - s
+		d = 120000 - c
+		Delay d
+		Call harvest()
+	End If	
+End Function
+
+Function reset()
+    MoveTo centerX, centerY
+    KeyDown "Ctrl", 1
+    MouseWheel - 3 
+    Delay 500
+    KeyUp "Ctrl", 1
+    Delay 500
+    MoveTo 200, 200
+    Delay 500
+    LeftDown 1
+    Delay 500
+    MoveTo 400, 400
+    Delay 500
+    LeftUp 1
+    MoveTo 200, 200
+    Delay 500
+    LeftDown 1
+    Delay 500
+    MoveTo 400, 400
+    LeftUp 1
+    Delay 500
+End Function
+
+
+Function moveToInitPos()
+    Call reset()
+    Call reset()
+    
+    Delay 1000
+    MoveTo centerX, centerY
+    Delay 100
+    MouseWheel - 4 
+    Delay 500
+    MoveTo centerX, centerY
+End Function
+
+Function init()
+    Call RunApp("C:\LeiDian\LDPlayer3.0\dnplayer.exe")  
+    HWD = Plugin.Window.Find("LDPlayerMainFrame", 0)
+    Call Plugin.Window.Size(HWD, 1280, 720)
+    Delay 500
+    Call Plugin.Window.Move(HWD, 0, 0)
+    Delay 500
+    wRect = Plugin.Window.GetWindowRect(HWD)
+
+    
+    Dim arr
+    arr = Split(wRect, "|")
+    left = CInt(arr(0))
+    top = CInt(arr(1))
+    right= CInt(arr(2))
+    bottom = CInt(arr(3))
+    width = right - left
+    height = bottom - top
+    centerX = left + width / 2
+    centerY = top + height / 2
+    
+    runFlag = True
+    DUR = 120000
+    tinXCnt = 9
+    tinYCnt = 4
+    dx = 0
+    dy = 0
+    
+    Call reset()
+    Call reset()
+    Call checkOffset()
+    
+    ratio = 0.6
+    
+    startX = 740 + dx
+    startY = 500 + dx
+    seedX = startX - 90
+    seedY = startY - 100
+    knifeX = startX - 160
+    knifeY = startY - 60
+    shelX = startX - 200
+    shelY = startY
+    shelInX = 222
+    shelInY = 331
+    shelGap = 130
+    
+    
+    
+End Function
+
+Function moveAllTin()
+    j = tinYCnt
+    qx = startX
+    qy = startY
+    Do While j > 0
+        i = tinXCnt
+        px = qx
+        py = qy
+        Do While i > 0
+            Delay 100
+            MoveTo px, py
+            px = px + 33
+            py = py - 17
+            i=i-1
+        Loop
+        qx = qx - 33
+        qy = qy - 17
+        j=j-1
+    Loop
+End Function
+
+Function moveToSeed()
+    Call moveToInitPos()
+    MoveTo startX, startY
+    LeftClick 1
+    Delay 500
+    MoveTo seedX, seedY
+End Function
+
+Function moveToKnife()
+    Call moveToInitPos()
+    MoveTo startX, startY
+    LeftClick 1
+    Delay 500
+    MoveTo knifeX, knifeY
+End Function
+
+Function moveToShel()
+    Call moveToInitPos()
+    MoveTo shelX, shelY
+    LeftClick 1
+    Delay 500
+End Function
+
+Function plant()
+    Call moveToSeed()
+    Delay 200
+    LeftDown 1
+    Delay 200
+    Call moveAllTin()
+    LeftUp 1
+    Delay 100
+    timeCost = 0
+End Function
+
+Function harvest()
+    Call moveToKnife()
+    Delay 200
+    LeftDown 1
+    Delay 200
+    Call moveAllTin()
+    LeftUp 1
+    Delay 100
+End Function
+
+Function sellOne()
+    flag = True
+    hasWheaf = True
+    Do While flag
+        FindPic left, top, right, bottom, "Attachment:\empty.bmp", ratio, x, y
+        If (x > 0 and y > 0) Then 
+            MoveTo x+40, y+20
+            Call wait(100)
+            LeftClick 1
+            Call wait(500)
+            FindPic left, top, right, bottom, "Attachment:\wheaf.bmp", ratio, intX, intY
+            If (intX < 470 and intX > 0 and intY < 280) Then 
+                MoveTo intX+30, intY+15
+                Call wait(100)
+                LeftClick 1
+                Call wait(100)
+                MoveTo 920, 665
+                LeftClick 1
+                Call wait(500)
+            Else 
+            	MoveTo 1060, 100
+            	LeftClick 1
+            	flag = False
+            	hasWheaf = False
+            	Call wait(500)
+            End If
+        Else 
+            flag = False
+        End If	
+    Loop
+    sellOne = hasWheaf
+End Function
+
+Function sell()	
+    hasWheaf = sellOne()
+    If (hasWheaf) Then 
+    	Call moveNextShelArea()
+    	Call sellOne()
+    End If
+    Call closeShel()	
+End Function
+
+Function ad()
+	FindPic left, top, right, bottom, "Attachment:\wheaf1.bmp", ratio, xx, yy
+	If (xx > 0) Then 
+		MoveTo shelInX, shelInY
+    	LeftClick 1
+   	 	Call wait(500)
+   	Else 
+   		Call closeShel()
+   		Exit Function
+	End If
+ 
+    FindPic left, top, right, bottom, "Attachment:\ad.bmp", ratio, x, y
+    If (x > 0) Then 
+        MoveTo 760, 360
+        Delay 100
+        LeftClick 1
+        Call wait(100)
+        MoveTo 620, 520
+        LeftClick 1
+        Call wait(500)
+    Else 
+        MoveTo 900, 120
+        Delay 100
+        LeftClick 1
+        Call wait(500)
+    End If
+    Call closeShel()
+End Function
+
+Function closeShel()
+    MoveTo 1050, 110
+    LeftClick 1
+    Call wait(1000)	
+End Function
+
+Function moveNextShelArea()
+    MoveTo 1100, 330
+    Delay 50
+    LeftDown 1
+    Delay 1000
+    MoveTo shelInX, shellInY
+    Call wait(1000)
+    LeftUp 1
+    MoveTo centerX,centerY
+    Call wait(500)
+End Function
+
+Function soldoutOne()
+    flag = True
+    Do While flag
+        FindPic left, top, right, bottom, "Attachment:\soldout.bmp", ratio, x, y
+        If (x > 0) Then 
+            MoveTo x + 35, y + 35
+            LeftClick 1
+            Call wait(500)
+        Else 
+            flag = False
+        End If
+    Loop
+End Function
+
+Function soldout()
+    Call soldoutOne()
+    Call moveNextShelArea()
+    Call soldoutOne()
+    Call closeShel()
+End Function
+
+Function wait(time)
+    Delay time
+    timeCost = timeCost + time
+End Function
+
+Function completeSell()
+	Call moveToShel()
+    Call soldout()
+    Call moveToShel()
+    Call sell()
+    Call moveToShel()
+    Call ad()
+End Function
+
+
+Event Form1.Button1.Click
+    Call init()
+    Call moveToInitPos()
+    Call plant()
+    Call completeSell()
+End Event
+
+
+Event Form1.Button2.Click
+	Call init()
+	Call moveToInitPos()
+	Call harvest()
+End Event
+
+
+Event Form1.Button3.Click
+	Call init()
+    Call moveToInitPos()
+    MoveTo startX, startY
+    LeftClick 1
+End Event
+
+Function auto()
+   	
+End Function
+
+
+Event Form1.Button4.Click
+	Call test()
+End Event
+
+
+Function testClose()
+	Call init()
+	FindPic left, top, right, bottom, "Attachment:\close.bmp", 0.6, x, y
+	If (x > 0) Then 
+		MoveTo x, y
+		LeftClick 1
+		Delay 50
+		MessageBox "ssss"
+	End If
+End Function
+
+Function test()
+	FindPic 400, 400, 700,700, "Attachment:\location.bmp", 0.6, x, y
+	MessageBox ""&x &y
+End Function
+
+Function testLocate()
+	Call init()
+	Call reset()
+	Call reset()
+	
+	Delay 500
+	MoveTo centerX, centerY
+	Delay 150
+	LeftDown 1
+	Delay 500
+	MoveR 0, - 100 
+	Delay 1000
+	LeftUp 1
+	
+	Delay 500
+	MoveTo centerX, centerY
+	Delay 150
+	LeftDown 1
+	Delay 500
+	MoveR 0, - 100 
+	Delay 1000
+	LeftUp 1
+	
+	Delay 500
+	MoveTo centerX, centerY
+	Delay 150
+	LeftDown 1
+	Delay 500
+	MoveR 0, - 100 
+	Delay 1000
+	LeftUp 1
+	
+	Delay 500
+	MoveTo startX, startY
+	Delay 100
+	LeftClick 1
+	
+End Function
+
+
+Function checkOffset()
+	Delay 2000
+	fh = Plugin.File.OpenFile("C:\Users\orang\Desktop\conf.txt")
+	line = Plugin.File.ReadLine(fh)
+	xy = Split(line, "|")
+	x = CInt(xy(0))
+	y = CInt(xy(1))
+	FindPic 400, 400, 700, 700, "Attachment:\location.bmp", 0.6, cx, cy
+	If (cx > 0) Then 
+		dx = cx - x
+		dy = cy - y
+	End If
+	TracePrint ""&dx
+	Call Plugin.File.CloseFile(fh)
+	
+End Function
