@@ -1,28 +1,28 @@
 
-Dim left, top, right, bottom, width, height, centerX, centerY
-Dim DUR
-Dim startX, startY, seedX, seedY, knifeX, knifeY
-Dim shelX, shelY, shelInX, shelInY, shelGap
-Dim timeCost
-Dim tinXCnt, tinYCnt
-Dim locX, locY, dx, dy
-Dim runFlag
-Dim ratio
+Dim mWinL, mWinT, mWinR, mWinB, mWinWidth, mWinHeight, mWinCenterX, mWinCenterY
+
+Dim mLandPosX, mLandPosY, mWheafSeedPosX, mWheafSeedPosY, mKnifePosX, mKnifePosY
+Dim mLandColumnCnt, mLandRowCnt
+
+Dim mShopPosX, mShopPosY, mShelfPosX, mShelfPosY, mShelfGap
+
+Dim mOffsetX, mOffsetY, mPicRatio
 
 Call startTask()
 
 Function startTask()
 	Call init()
 	Call moveToInitPos()
+
 	// 开始种植之前判断一下有没有x号，有就关闭
-	FindPic left, top, right, bottom, "Attachment:\close.bmp", ratio, x, y
+	FindPic mWinL, mWinT, mWinR, mWinB, "Attachment:\close.bmp", mPicRatio, x, y
 	If (x > 0) Then 
 		MoveTo x, y
 		LeftClick 1
 		Delay 50
 		Exit Function
 	Else 
-		Call plant()
+		Call startPlantWheaf()
 		s = Plugin.GetSysInfo.GetTime()
 		Call completeSell()
 		c = Plugin.GetSysInfo.GetTime() - s
@@ -33,7 +33,7 @@ Function startTask()
 End Function
 
 Function reset()
-    MoveTo centerX, centerY
+    MoveTo mWinCenterX, mWinCenterY
     KeyDown "Ctrl", 1
     MouseWheel - 3 
     Delay 500
@@ -59,13 +59,12 @@ End Function
 Function moveToInitPos()
     Call reset()
     Call reset()
-    
     Delay 1000
-    MoveTo centerX, centerY
+    MoveTo mWinCenterX, mWinCenterY
     Delay 100
     MouseWheel - 4 
     Delay 500
-    MoveTo centerX, centerY
+    MoveTo mWinCenterX, mWinCenterY
 End Function
 
 Function init()
@@ -80,50 +79,63 @@ Function init()
     
     Dim arr
     arr = Split(wRect, "|")
-    left = CInt(arr(0))
-    top = CInt(arr(1))
-    right= CInt(arr(2))
-    bottom = CInt(arr(3))
-    width = right - left
-    height = bottom - top
-    centerX = left + width / 2
-    centerY = top + height / 2
+    mWinL = CInt(arr(0))
+    mWinT = CInt(arr(1))
+    mWinR= CInt(arr(2))
+    mWinB = CInt(arr(3))
+    mWinWidth = mWinR - mWinL
+    mWinHeight = mWinB - mWinT
+    mWinCenterX = mWinL + mWinWidth / 2
+    mWinCenterY = mWinT + mWinHeight / 2
     
-    runFlag = True
-    DUR = 120000
-    tinXCnt = 9
-    tinYCnt = 4
-    dx = 0
-    dy = 0
+    mLandColumnCnt = 9
+    mLandRowCnt = 4
+    mOffsetX = 0
+    mOffsetY = 0
     
     Call reset()
     Call reset()
     Call checkOffset()
     
-    ratio = 0.6
+    mPicRatio = 0.6
     
-    startX = 740 + dx
-    startY = 500 + dx
-    seedX = startX - 90
-    seedY = startY - 100
-    knifeX = startX - 160
-    knifeY = startY - 60
-    shelX = startX - 200
-    shelY = startY
-    shelInX = 222
-    shelInY = 331
-    shelGap = 130
-    
-    
-    
+    mLandPosX = 740 + mOffsetX
+    mLandPosY = 500 + mOffsetX
+    mWheafSeedPosX = mLandPosX - 90
+    mWheafSeedPosY = mLandPosY - 100
+    mKnifePosX = mLandPosX - 160
+    mKnifePosY = mLandPosY - 60
+    mShopPosX = mLandPosX - 200
+    mShopPosY = mLandPosY
+    mShelfPosX = 222
+    mShelfPosY = 331
+    mShelfGap = 130  
 End Function
 
-Function moveAllTin()
-    j = tinYCnt
-    qx = startX
-    qy = startY
+
+Function checkOffset()
+    Delay 2000
+    fh = Plugin.File.OpenFile("C:\Users\orang\Desktop\conf.txt")
+    line = Plugin.File.ReadLine(fh)
+    xy = Split(line, "|")
+    x = CInt(xy(0))
+    y = CInt(xy(1))
+    FindPic 400, 400, 700, 700, "Attachment:\location.bmp", 0.6, cx, cy
+    If (cx > 0) Then 
+        mOffsetX = cx - x
+        mOffsetY = cy - y
+    End If
+    TracePrint ""&mOffsetX
+    Call Plugin.File.CloseFile(fh)  
+End Function
+
+
+Function visitEveryLand()
+    j = mLandRowCnt
+    qx = mLandPosX
+    qy = mLandPosY
     Do While j > 0
-        i = tinXCnt
+        i = mLandColumnCnt
         px = qx
         py = qy
         Do While i > 0
@@ -139,35 +151,34 @@ Function moveAllTin()
     Loop
 End Function
 
-Function moveToSeed()
-    Call moveToInitPos()
-    MoveTo startX, startY
-    LeftClick 1
-    Delay 500
-    MoveTo seedX, seedY
-End Function
+
 
 Function moveToKnife()
     Call moveToInitPos()
-    MoveTo startX, startY
+    MoveTo mLandPosX, mLandPosY
     LeftClick 1
     Delay 500
-    MoveTo knifeX, knifeY
+    MoveTo mKnifePosX, mKnifePosY
 End Function
 
 Function moveToShel()
     Call moveToInitPos()
-    MoveTo shelX, shelY
+    MoveTo mShopPosX, mShopPosY
     LeftClick 1
     Delay 500
 End Function
 
-Function plant()
-    Call moveToSeed()
+
+Function startPlantWheaf()
+    Call moveToInitPos()
+    MoveTo mLandPosX, mLandPosY
+    LeftClick 1
+    Delay 500
+    MoveTo mWheafSeedPosX, mWheafSeedPosY
     Delay 200
     LeftDown 1
     Delay 200
-    Call moveAllTin()
+    Call visitEveryLand()
     LeftUp 1
     Delay 100
     timeCost = 0
@@ -178,7 +189,7 @@ Function harvest()
     Delay 200
     LeftDown 1
     Delay 200
-    Call moveAllTin()
+    Call visitEveryLand()
     LeftUp 1
     Delay 100
 End Function
@@ -187,13 +198,13 @@ Function sellOne()
     flag = True
     hasWheaf = True
     Do While flag
-        FindPic left, top, right, bottom, "Attachment:\empty.bmp", ratio, x, y
+        FindPic mWinL, mWinT, mWinR, mWinB, "Attachment:\empty.bmp", mPicRatio, x, y
         If (x > 0 and y > 0) Then 
             MoveTo x+40, y+20
             Call wait(100)
             LeftClick 1
             Call wait(500)
-            FindPic left, top, right, bottom, "Attachment:\wheaf.bmp", ratio, intX, intY
+            FindPic mWinL, mWinT, mWinR, mWinB, "Attachment:\wheaf.bmp", mPicRatio, intX, intY
             If (intX < 470 and intX > 0 and intY < 280) Then 
                 MoveTo intX+30, intY+15
                 Call wait(100)
@@ -226,9 +237,9 @@ Function sell()
 End Function
 
 Function ad()
-	FindPic left, top, right, bottom, "Attachment:\wheaf1.bmp", ratio, xx, yy
+	FindPic mWinL, mWinT, mWinR, mWinB, "Attachment:\wheaf1.bmp", mPicRatio, xx, yy
 	If (xx > 0) Then 
-		MoveTo shelInX, shelInY
+		MoveTo mShelfPosX, mShelfPosY
     	LeftClick 1
    	 	Call wait(500)
    	Else 
@@ -236,7 +247,7 @@ Function ad()
    		Exit Function
 	End If
  
-    FindPic left, top, right, bottom, "Attachment:\ad.bmp", ratio, x, y
+    FindPic mWinL, mWinT, mWinR, mWinB, "Attachment:\ad.bmp", mPicRatio, x, y
     If (x > 0) Then 
         MoveTo 760, 360
         Delay 100
@@ -265,17 +276,17 @@ Function moveNextShelArea()
     Delay 50
     LeftDown 1
     Delay 1000
-    MoveTo shelInX, shellInY
+    MoveTo mShelfPosX, shellInY
     Call wait(1000)
     LeftUp 1
-    MoveTo centerX,centerY
+    MoveTo mWinCenterX,mWinCenterY
     Call wait(500)
 End Function
 
 Function soldoutOne()
     flag = True
     Do While flag
-        FindPic left, top, right, bottom, "Attachment:\soldout.bmp", ratio, x, y
+        FindPic mWinL, mWinT, mWinR, mWinB, "Attachment:\soldout.bmp", mPicRatio, x, y
         If (x > 0) Then 
             MoveTo x + 35, y + 35
             LeftClick 1
@@ -311,7 +322,7 @@ End Function
 Event Form1.Button1.Click
     Call init()
     Call moveToInitPos()
-    Call plant()
+    Call startPlantWheaf()
     Call completeSell()
 End Event
 
@@ -326,7 +337,7 @@ End Event
 Event Form1.Button3.Click
 	Call init()
     Call moveToInitPos()
-    MoveTo startX, startY
+    MoveTo mLandPosX, mLandPosY
     LeftClick 1
 End Event
 
@@ -336,79 +347,5 @@ End Function
 
 
 Event Form1.Button4.Click
-	Call test()
+
 End Event
-
-
-Function testClose()
-	Call init()
-	FindPic left, top, right, bottom, "Attachment:\close.bmp", 0.6, x, y
-	If (x > 0) Then 
-		MoveTo x, y
-		LeftClick 1
-		Delay 50
-		MessageBox "ssss"
-	End If
-End Function
-
-Function test()
-	FindPic 400, 400, 700,700, "Attachment:\location.bmp", 0.6, x, y
-	MessageBox ""&x &y
-End Function
-
-Function testLocate()
-	Call init()
-	Call reset()
-	Call reset()
-	
-	Delay 500
-	MoveTo centerX, centerY
-	Delay 150
-	LeftDown 1
-	Delay 500
-	MoveR 0, - 100 
-	Delay 1000
-	LeftUp 1
-	
-	Delay 500
-	MoveTo centerX, centerY
-	Delay 150
-	LeftDown 1
-	Delay 500
-	MoveR 0, - 100 
-	Delay 1000
-	LeftUp 1
-	
-	Delay 500
-	MoveTo centerX, centerY
-	Delay 150
-	LeftDown 1
-	Delay 500
-	MoveR 0, - 100 
-	Delay 1000
-	LeftUp 1
-	
-	Delay 500
-	MoveTo startX, startY
-	Delay 100
-	LeftClick 1
-	
-End Function
-
-
-Function checkOffset()
-	Delay 2000
-	fh = Plugin.File.OpenFile("C:\Users\orang\Desktop\conf.txt")
-	line = Plugin.File.ReadLine(fh)
-	xy = Split(line, "|")
-	x = CInt(xy(0))
-	y = CInt(xy(1))
-	FindPic 400, 400, 700, 700, "Attachment:\location.bmp", 0.6, cx, cy
-	If (cx > 0) Then 
-		dx = cx - x
-		dy = cy - y
-	End If
-	TracePrint ""&dx
-	Call Plugin.File.CloseFile(fh)
-	
-End Function
